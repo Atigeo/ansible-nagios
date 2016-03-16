@@ -92,8 +92,8 @@
 - name: Create directory
   file: path=/usr/local/nagios/libexec/ state=directory owner=nagios group=nagios mode=755
 
-#- name: Move eventhandlers
-#  command: "mv /tmp/nagios-{{ nagios_version }}/contrib/eventhandlers/ /usr/local/nagios/libexec/"
+- name: Move eventhandlers
+  command: "mv /tmp/nagios-{{ nagios_version }}/contrib/eventhandlers/ /usr/local/nagios/libexec/"
 
 - name: Add password for nagios_user
   htpasswd: >
