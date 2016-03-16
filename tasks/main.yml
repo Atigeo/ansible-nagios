@@ -1,0 +1,113 @@
+---
+# tasks file for ansible-nagios
+
+# - name: Disable SELINUX
+#   selinux: state=disabled
+#   when: "ansible_os_family == 'RedHat'"
+
+# - name: Install Apache 
+#   package: name=httpd state=latest
+
+# - name: Install build tools
+#   package: name={{ item }} state=latest
+#   with_items:
+#     - gcc
+#     - gcc-c++
+#     - make
+#     - openssl-devel
+#     - php
+#     - perl 
+#     - perl-devel
+#     - python-passlib
+#     - unzip
+
+
+# - name: Create nagios group
+#   group: >
+#     name={{ nagios_group }} 
+#     state=present
+
+# - name: Create nagios user
+#   user: >
+#     name={{ nagios_user }} 
+#     groups={{ nagios_group }} 
+#     append=yes
+
+
+# - name: Download nagios source
+#   get_url: >
+#     url=https://assets.nagios.com/downloads/nagioscore/releases/nagios-{{ nagios_version }}.tar.gz 
+#     dest=/tmp/
+
+# - name: Untar nagios tar.gz
+#   unarchive: >
+#     copy=no 
+#     src=/tmp/nagios-{{ nagios_version }}.tar.gz 
+#     dest=/tmp/
+
+# - name: Configure make nagios (RedHat)
+#   command: "./configure --with-command-group=nagcmd"
+#   args:
+#     chrir: /tmp/nagios-{{ nagios_version }}
+#   when: ansible_os_family == "RedHat"
+
+# - name: Build nagios
+#   command: "{{ item }}"
+#   with_items:
+#     - "make all"
+#     - "make install"
+#     - "make install-init"
+#     - "make install-config"
+#     - "make install-commandmode"
+#     - "make install-webconf"
+#   args:
+#     chdir: /tmp/nagios-{{ nagios_version }}
+
+- name: Download nagios-plugins source
+  get_url: >
+    url=http://www.nagios-plugins.org/download/nagios-plugins-{{ plugins_version }}.tar.gz 
+    dest=/tmp/
+
+- name: Untar nagios plugins tar.gz
+  unarchive: >
+    copy=no 
+    src=/tmp/nagios-plugins-{{ plugins_version }}.tar.gz 
+    dest=/tmp/
+
+
+- name: Configure make plugins (RedHat)
+  command: "./configure --with-nagios-user={{ nagios_user }} --with-nagios-group={{ nagios_group }}" 
+  args:
+    chdir: /tmp/nagios-plugins-{{ plugins_version }}
+  when: ansible_os_family == "RedHat"
+
+- name: Build nagios plugins
+  command: "{{ item }}"
+  with_items:
+    - "make"
+    - "make install"
+  args:
+    chdir: /tmp/nagios-plugins-{{ plugins_version }} 
+
+- name: Create directory
+  file: path=/usr/local/nagios/libexec/ state=directory owner=nagios group=nagios mode=755
+
+#- name: Move eventhandlers
+#  command: "mv /tmp/nagios-{{ nagios_version }}/contrib/eventhandlers/ /usr/local/nagios/libexec/"
+
+- name: Add password for nagios_user
+  htpasswd: >
+    path=/usr/local/nagios/etc/htpasswd.users 
+    name={{ nagios_user }} 
+    password={{ nagios_ui_password }}
+    owner={{ nagios_user }}  
+    group={{ nagios_user }}  
+    mode=644
+
+- name: Setup Apache service
+  service: name=httpd enabled=yes
+  notify: start-apache
+
+- name: Setup Nagios service
+  service: name=nagios enabled=yes
+  notify: start-nagios
