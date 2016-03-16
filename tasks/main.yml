@@ -48,7 +48,7 @@
 - name: Configure make nagios (RedHat)
   command: "./configure --with-command-group=nagcmd"
   args:
-    chrir: /tmp/nagios-{{ nagios_version }}
+    chdir: /tmp/nagios-{{ nagios_version }}
   when: ansible_os_family == "RedHat"
 
 - name: Build nagios
@@ -93,16 +93,31 @@
   file: path=/usr/local/nagios/libexec/ state=directory owner=nagios group=nagios mode=755
 
 - name: Move eventhandlers
-  command: "mv /tmp/nagios-{{ nagios_version }}/contrib/eventhandlers/ /usr/local/nagios/libexec/"
+  command: "cp -Rn /tmp/nagios-{{ nagios_version }}/contrib/eventhandlers/ /usr/local/nagios/libexec/"
 
 - name: Add password for nagios_user
   htpasswd: >
     path=/usr/local/nagios/etc/htpasswd.users 
-    name={{ nagios_user }} 
+    name=nagiosadmin
     password={{ nagios_ui_password }}
     owner={{ nagios_user }}  
     group={{ nagios_user }}  
     mode=644
+  notify: start-nagios
+
+- name: Create directory /usr/local/nagios/etc/custom_objects
+  file: path=/usr/local/nagios/etc/custom_objects state=directory state=directory owner=nagios group=nagios mode=755
+
+- name: Add cfg_dir=/usr/local/nagios/etc/custom_objects/* to /usr/local/nagios/etc/nagios.cfg
+  lineinfile: dest=/usr/local/nagios/etc/nagios.cfg  line=cfg_dir=/usr/local/nagios/etc/custom_objects/*
+
+- name: Add monitoring template
+  template: 
+    src: templates/host_template.cfg
+    dest: /usr/local/nagios/etc/custom_objects/{{ item }}.cfg
+  with_items:
+    groups['monitored-hosts']
+  notify: start-nagios
 
 - name: Setup Apache service
   service: name=httpd enabled=yes
