@@ -1,12 +1,12 @@
 ---
 # handlers file for ansible-nagios
 
-- name: start-apache
+- name: restart-apache
   service:
     name: httpd
     state: restarted
 
-- name: start-nagios
+- name: restart-nagios
   service:
     name: nagios
     state: restarted
