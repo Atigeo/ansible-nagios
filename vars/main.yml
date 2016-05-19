@@ -6,4 +6,4 @@ plugins_version: 2.1.1
 
 nagios_user: nagios
 nagios_group: nagcmd
-nagios_ui_password: $apr1$FYItnoeC$tMmN5TCw17xJWAJ6DCDTU0
+nagios_ui_password: $1$SomeSalt$Z6MtBWdILNO8tajUtZLH50
